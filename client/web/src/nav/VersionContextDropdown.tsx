@@ -7,7 +7,6 @@ import {
     ListboxGroupLabel,
 } from '@reach/listbox'
 import classNames from 'classnames'
-import * as H from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
 import FlagVariantIcon from 'mdi-react/FlagVariantIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
@@ -18,22 +17,17 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { VersionContext } from '../schema/site.schema'
-import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../search'
-import { submitSearch } from '../search/helpers'
+import { SubmitSearchProps } from '../search/helpers'
 
 import styles from './VersionContextDropdown.module.scss'
 
 const HAS_DISMISSED_INFO_KEY = 'sg-has-dismissed-version-context-info'
 
 export interface VersionContextDropdownProps
-    extends Pick<PatternTypeProps, 'patternType'>,
-        Pick<CaseSensitivityProps, 'caseSensitive'>,
-        VersionContextProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
+    extends VersionContextProps,
+        Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
     setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
-    history: H.History
-    navbarSearchQuery: string
 
     /**
      * Whether to always show the expanded state. Used for testing.
@@ -45,42 +39,27 @@ export interface VersionContextDropdownProps
 }
 
 export const VersionContextDropdown: React.FunctionComponent<VersionContextDropdownProps> = ({
-    history,
-    navbarSearchQuery,
-    caseSensitive,
-    patternType,
     setVersionContext,
     availableVersionContexts,
     versionContext: currentVersionContext,
-    selectedSearchContextSpec,
     alwaysExpanded,
     portal,
     className,
-}: VersionContextDropdownProps) => {
+    submitSearch,
+}) => {
     /** Whether the user has dismissed the info blurb in the dropdown. */
     const [hasDismissedInfo, setHasDismissedInfo] = useLocalStorage(HAS_DISMISSED_INFO_KEY, false)
 
     const submitOnToggle = useCallback(
         (versionContext?: string): void => {
-            const searchQueryNotEmpty = navbarSearchQuery !== ''
-            const activation = undefined
-            const source = 'filter'
-            const searchParameters: { key: string; value: string }[] = [{ key: 'from-context-toggle', value: 'true' }]
-            if (searchQueryNotEmpty) {
-                submitSearch({
-                    history,
-                    query: navbarSearchQuery,
-                    source,
-                    patternType,
-                    caseSensitive,
-                    versionContext,
-                    activation,
-                    searchParameters,
-                    selectedSearchContextSpec,
-                })
-            }
+            submitSearch?.({
+                source: 'filter',
+                versionContext,
+                activation: undefined,
+                searchParameters: [{ key: 'from-context-toggle', value: 'true' }],
+            })
         },
-        [caseSensitive, history, navbarSearchQuery, patternType, selectedSearchContextSpec]
+        [submitSearch]
     )
 
     const updateValue = useCallback(

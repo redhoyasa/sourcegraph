@@ -10,7 +10,7 @@ import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { VersionContext } from '../../schema/site.schema'
-import { QueryState, submitSearch } from '../helpers'
+import { QueryState, SubmitSearchProps } from '../helpers'
 
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import styles from './SearchBox.module.scss'
@@ -19,7 +19,7 @@ import { SearchContextDropdown } from './SearchContextDropdown'
 import { Toggles, TogglesProps } from './toggles/Toggles'
 
 export interface SearchBoxProps
-    extends Omit<TogglesProps, 'navbarSearchQuery'>,
+    extends Omit<TogglesProps, 'navbarSearchQuery' | 'submitSearch'>,
         ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
@@ -29,12 +29,14 @@ export interface SearchBoxProps
     queryState: QueryState
     onChange: (newState: QueryState) => void
     onSubmit: () => void
+    submitSearchOnVersionContextChange?: SubmitSearchProps['submitSearch']
+    submitSearchOnSearchContextChange?: SubmitSearchProps['submitSearch']
+    submitSearchOnToggle?: SubmitSearchProps['submitSearch']
     onFocus?: () => void
     onCompletionItemSelected?: () => void
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
-    submitSearchOnSearchContextChange?: boolean
     setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
 
@@ -60,15 +62,11 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
         <div className={classNames(styles.searchBox, props.hideHelpButton ? styles.searchBoxShadow : null)}>
             {!props.hideVersionContexts && (
                 <VersionContextDropdown
-                    history={props.history}
-                    caseSensitive={props.caseSensitive}
-                    patternType={props.patternType}
-                    navbarSearchQuery={queryState.query}
                     versionContext={props.versionContext}
                     setVersionContext={props.setVersionContext}
                     availableVersionContexts={props.availableVersionContexts}
-                    selectedSearchContextSpec={props.selectedSearchContextSpec}
                     className={styles.searchBoxVersionContextDropdown}
+                    submitSearch={props.submitSearchOnVersionContextChange}
                 />
             )}
             <div className={classNames(styles.searchBoxBackgroundContainer, 'flex-shrink-past-contents')}>
@@ -77,7 +75,7 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                         <SearchContextDropdown
                             {...props}
                             query={queryState.query}
-                            submitSearch={submitSearch}
+                            submitSearch={props.submitSearchOnSearchContextChange}
                             className={styles.searchBoxContextDropdown}
                         />
                         <div className={styles.searchBoxSeparator} />
@@ -89,7 +87,12 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                         className={styles.searchBoxInput}
                     />
-                    <Toggles {...props} navbarSearchQuery={queryState.query} className={styles.searchBoxToggles} />
+                    <Toggles
+                        {...props}
+                        submitSearch={props.submitSearchOnToggle}
+                        navbarSearchQuery={queryState.query}
+                        className={styles.searchBoxToggles}
+                    />
                 </div>
             </div>
             <SearchButton hideHelpButton={props.hideHelpButton} className={styles.searchBoxButton} />
